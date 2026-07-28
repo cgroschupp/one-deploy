@@ -1,7 +1,7 @@
 ---
 - ansible.builtin.include_tasks:
     file: "{{ role_path }}/tasks/{{ _item.1 }}.yml"
-  loop: "{{ vn_names | product(_managers[_d] | d(_managers[_f])) }}"
+  loop: "{{ vn_names | product(_managers.get(_d, _managers.get(_f, []))) }}"
   loop_control: { loop_var: _item }
   vars:
     _d: "{{ ansible_distribution }}"
