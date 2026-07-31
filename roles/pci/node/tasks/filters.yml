@@ -9,7 +9,9 @@
     - name: Get Nodes
       ansible.builtin.command:
         cmd: onehost list --json
+      check_mode: false
       changed_when: false
+      failed_when: command.rc != 0 and not ansible_check_mode
       register: command
       run_once: true
 
@@ -26,18 +28,23 @@
           {{ _after | opennebula.deploy.to_one }}
         executable: /bin/bash
       changed_when: true
-      when: _after | opennebula.deploy.to_one
-            !=
-            _before | opennebula.deploy.to_one
+      when:
+        - command.rc | d(1) == 0
+        - _node is truthy
+        - _after | opennebula.deploy.to_one
+          !=
+          _before | opennebula.deploy.to_one
       vars:
         _host_pool: >-
-          {{ (command.stdout | from_json).HOST_POOL }}
+          {{ (((command.rc | d(1) == 0) | ternary(command.stdout | d('{}', true), '{}')) | from_json).HOST_POOL | d({}) }}
         _this: >-
           {{ ansible_host | d(inventory_hostname) }}
+        _node: >-
+          {{ [_host_pool.HOST | d([])] | flatten
+                                     | selectattr('NAME', '==', _this)
+                                     | first | d({}) }}
         _template: >-
-          {{ ([_host_pool.HOST] | flatten
-                                | selectattr('NAME', '==', _this)
-                                | first).TEMPLATE }}
+          {{ _node.TEMPLATE | d({}) }}
         _before:
           PCI_SHORT_ADDRESS: >-
             {{ _template.PCI_SHORT_ADDRESS | d('') }}

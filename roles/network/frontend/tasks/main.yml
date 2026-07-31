@@ -9,7 +9,9 @@
       ansible.builtin.shell:
         cmd: onevnet list --json
         executable: /bin/bash
+      check_mode: false
       changed_when: false
+      failed_when: shell.rc != 0 and not ansible_check_mode
       register: shell
 
 - name: Parse VNETs
@@ -30,7 +32,7 @@
       {{ _ar_dict_parsed }}
   vars:
     _document: >-
-      {{ shell.stdout | from_json }}
+      {{ ((shell.rc | d(1) == 0) | ternary(shell.stdout | d('{}', true), '{}')) | from_json }}
     _vnets: >-
       {{ [_document.VNET_POOL.VNET | default([])] | flatten | list }}
     _ar_dict_parsed: >-

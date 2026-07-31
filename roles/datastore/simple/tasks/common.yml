@@ -7,8 +7,10 @@
   ansible.builtin.shell:
     cmd: onedatastore list --json
     executable: /bin/bash
+  check_mode: false
   register: shell
   changed_when: false
+  failed_when: shell.rc != 0 and not ansible_check_mode
   delegate_to: "{{ leader }}"
 
 - name: Parse Datastores
@@ -22,7 +24,7 @@
         {{ _mounts.file | d([None], true) | zip(_grouped.file) }}
   vars:
     _document: >-
-      {{ shell.stdout | from_json }}
+      {{ ((shell.rc | d(1) == 0) | ternary(shell.stdout | d('{}', true), '{}')) | from_json }}
     _datastores: >-
       {{ [_document.DATASTORE_POOL.DATASTORE | d([])] | flatten | list }}
     _mounts:

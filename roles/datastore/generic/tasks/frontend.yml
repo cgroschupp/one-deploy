@@ -13,7 +13,9 @@
       ansible.builtin.shell:
         cmd: onedatastore list --json
         executable: /bin/bash
+      check_mode: false
       changed_when: false
+      failed_when: shell.rc != 0 and not ansible_check_mode
       register: shell
 
     - name: Parse Datastores
@@ -24,7 +26,7 @@
           {{ dict(_names | zip(_datastores)) }}
       vars:
         _document: >-
-          {{ shell.stdout | from_json }}
+          {{ ((shell.rc | d(1) == 0) | ternary(shell.stdout | d('{}', true), '{}')) | from_json }}
         _datastores: >-
           {{ [_document.DATASTORE_POOL.DATASTORE | d([])] | flatten }}
         _names: >-
@@ -93,7 +95,7 @@
           {{- dict(output) -}}
         _update2: >-
           {%- set output = [] -%}
-          {%- for item in shell_create_datastores.results -%}
+          {%- for item in shell_create_datastores.results | d([]) | selectattr('stdout_lines', 'defined') -%}
           {{- output.append([item.item, {"id": item.stdout_lines[-1].split(':')[-1] | trim | int}]) -}}
           {%- endfor -%}
           {{- dict(output) -}}
