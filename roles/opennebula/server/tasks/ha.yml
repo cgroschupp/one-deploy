@@ -3,6 +3,7 @@
   ansible.builtin.shell:
     cmd: onezone show '{{ zone_name }}' --json
     executable: /bin/bash
+  check_mode: false
   changed_when: false
   register: shell
   ignore_errors: true
@@ -23,7 +24,12 @@
     _results: >-
       {{ federation.groups.frontend | map('extract', hostvars, ['shell']) | list }}
     _running: >-
-      {{ _results | selectattr('failed', 'false') | list }}
+      {{ _results
+         | rejectattr('skipped', 'defined')
+         | selectattr('failed', 'false')
+         | selectattr('stdout', 'defined')
+         | selectattr('stdout')
+         | list }}
     _documents: >-
       {{ _running | map(attribute='stdout') | map('from_json') | list }}
     _server_pools: >-

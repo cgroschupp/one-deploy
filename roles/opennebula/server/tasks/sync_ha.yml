@@ -49,6 +49,7 @@
                     -p '{{ db_password }}' \
                     -d '{{ db_name }}'
     executable: /bin/bash
+  check_mode: false
   changed_when: false
   register: shell
   ignore_errors: true

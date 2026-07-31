@@ -19,6 +19,7 @@
       ansible.builtin.shell:
         cmd: oneuser show oneadmin --json
         executable: /bin/bash
+      check_mode: false
       changed_when: false
       register: shell
 

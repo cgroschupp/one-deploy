@@ -57,6 +57,7 @@
           ansible.builtin.shell:
             cmd: onezone show '{{ zone_name }}' --json
             executable: /bin/bash
+          check_mode: false
           changed_when: false
           register: shell
           delegate_to: leader
