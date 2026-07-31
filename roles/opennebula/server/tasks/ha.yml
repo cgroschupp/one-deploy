@@ -29,11 +29,14 @@
     _server_pools: >-
       {{ _documents | map(attribute='ZONE.SERVER_POOL') | select | list }}
     _peers: >-
-      {{ [_server_pools[0].SERVER] | flatten | list }}
+      {{ ([_server_pools[0].SERVER] | flatten | list)
+         if (_server_pools | length > 0) else [] }}
     _peer_names: >-
       {{ _peers | map(attribute='NAME') | list }}
     _leader: >-
-      {{ (_peers | selectattr('STATE', '==', '3') | first).NAME }}
+      {{ (_peers | selectattr('STATE', '==', '3') | first).NAME
+         if (_peers | selectattr('STATE', '==', '3') | list | length > 0) else
+         federation.groups.frontend[0] }}
 
 - ansible.builtin.include_tasks:
     file: "{{ role_path }}/tasks/join.yml"
