@@ -24,7 +24,12 @@
         - name: Dynamically add ungrouped inventory host to represent the Leader
           ansible.builtin.add_host:
             name: leader
-            ansible_host: "{{ hostvars[_leader].ansible_host | d(_leader) }}"
+            ansible_host: >-
+              {{ one_leader_ansible_host
+                 | d(hostvars[item].one_leader_ansible_host)
+                 | d(hostvars[_leader].ansible_host
+                     if _leader in hostvars
+                     else hostvars[_federation.groups.frontend[0]].ansible_host) }}
             ansible_user: "{{ hostvars[_federation.groups.frontend[0]].ansible_user }}"
             ansible_python_interpreter: >-
               {{ hostvars[_federation.groups.frontend[0]].ansible_python_interpreter }}
@@ -34,6 +39,10 @@
             _leader: "{{ hostvars[item].leader }}"
             _federation: "{{ hostvars[item].federation }}"
           loop: "{{ ansible_play_batch }}"
+
+        - name: Show selected Leader SSH target
+          ansible.builtin.debug:
+            msg: "leader ansible_host={{ hostvars.leader.ansible_host }}"
 
         # When delegate_to's argument is unreachable, then a fatal error
         # is thrown. It seems this error cannot be rescued in block/rescue/always,
