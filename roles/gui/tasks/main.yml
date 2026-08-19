@@ -40,12 +40,14 @@
       ansible.builtin.service:
         name: opennebula-fireedge
         enabled: true
+      when: not (ansible_check_mode and package is defined and package is changed)
 
     - name: Start FireEdge Server (NOW)
       ansible.builtin.service:
         name: opennebula-fireedge
         state: started
       register: service_fireedge
+      when: not (ansible_check_mode and package is defined and package is changed)
 
     - name: Ensure FireEdge and Sunstone are not restarted twice
       ansible.builtin.set_fact:

@@ -5,6 +5,7 @@
     enabled: true
     state: started
   register: service
+  when: not (ansible_check_mode and package is defined and package is changed)
 
 - name: Make sure OpenNebula is not restarted twice
   ansible.builtin.set_fact:

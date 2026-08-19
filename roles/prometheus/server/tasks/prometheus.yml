@@ -58,6 +58,7 @@
         daemon_reload: >-
           {{ _changed }}
       loop: "{{ _loop }}"
+      when: not (ansible_check_mode and package is defined and package is changed)
       vars:
         _changed: >-
           {{ shell_patch_datasources is changed or template_override_units is changed }}

@@ -4,6 +4,7 @@
     name: opennebula
     enabled: true
     state: started
+  when: not (ansible_check_mode and package is defined and package is changed)
 
 - delegate_to: "{{ leader }}"
   block:

@@ -31,6 +31,7 @@
         name: "{{ _name[ansible_os_family][db_backend] }}"
         enabled: true
         state: started
+      when: not (ansible_check_mode and package is defined and package is changed)
       vars:
         _name:
           Debian:
