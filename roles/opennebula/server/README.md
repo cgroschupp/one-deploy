@@ -20,6 +20,7 @@ Role Variables
 | `one_vip`           | `str`  | undefined    | `10.11.12.13` | When OpenNebula is in HA mode it points to the Leader.                                                          |
 | `one_vip_if`        | `str`  | undefined    | `eth0`        | NIC device to assign the `one_vip` address to (on Frontends).                                                   |
 | `one_vip_cidr`      | `int`  | undefined    | `24`          | CIDR prefix of the subnet `one_vip` is allocated in.                                                            |
+| `one_vips`          | `list` | undefined    | see below     | List of VIPs to assign via OpenNebula's RAFT VIP hook. The first entry is used as primary VIP if `one_vip` is undefined. |
 | `db_backend`        | `str`  | `MariaDB`    |               |`MariaDB` or `SQLite`.                                                                                           |
 | `db_name`           | `str`  | `opennebula` |               | Name of the database/schema used by OpenNebula.                                                                 |
 | `db_owner`          | `str`  | `oneadmin`   |               | User used by OpenNebula to access the database.                                                                 |
@@ -39,6 +40,16 @@ Dependencies
 
 Example Playbook
 ----------------
+
+Multiple VIPs can be configured with `one_vips`:
+
+    one_vips:
+      - address: 10.11.12.13
+        cidr: 24
+        interface: eth0
+      - address: 10.11.13.13
+        cidr: 24
+        interface: eth1
 
     - hosts: frontend
       vars:

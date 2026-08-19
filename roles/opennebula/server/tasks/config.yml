@@ -46,7 +46,11 @@
     _gate_endpoint: >-
       {{ gate_endpoint | d(_default) }}
     _default: >-
-      {{ 'http://' ~ (one_vip | d(_host)) ~ ':5030' }}
+      {{ 'http://' ~ _vip ~ ':5030' }}
+    _vip: >-
+      {{ one_vip | d(one_vips[0].address
+                     if (one_vips is defined and one_vips | count > 0)
+                     else _host) }}
     _host: >-
       {{ hostvars[federation.groups.frontend[0]].ansible_host }}
   notify:
@@ -209,6 +213,23 @@
     - Sync Remotes
 
 - when: use_ha is true
+  vars:
+    _one_vips: >-
+      {{ one_vips | d([
+           {
+             "interface": one_vip_if,
+             "address": one_vip,
+             "cidr": one_vip_cidr
+           }
+         ]) }}
+    _one_vip_arguments: >-
+      {%- set output = [] -%}
+      {%- for item in _one_vips -%}
+      {{- output.append(item.interface ~ ' ' ~ item.address ~ '/' ~ item.cidr) -}}
+      {%- endfor -%}
+      {{- output | join(' ') -}}
+    _one_primary_vip: >-
+      {{ one_vip | d(_one_vips[0].address) }}
   block:
     - name: Configure oned (RAFT)
       opennebula.deploy.cfgtool:
@@ -220,13 +241,13 @@
               value: '"raft/vip.sh"'
           - put:
               path: [RAFT_LEADER_HOOK, ARGUMENTS]
-              value: '"leader {{ one_vip_if }} {{ one_vip }}/{{ one_vip_cidr }}"'
+              value: '"leader {{ _one_vip_arguments }}"'
           - put:
               path: [RAFT_FOLLOWER_HOOK, COMMAND]
               value: '"raft/vip.sh"'
           - put:
               path: [RAFT_FOLLOWER_HOOK, ARGUMENTS]
-              value: '"follower {{ one_vip_if }} {{ one_vip }}/{{ one_vip_cidr }}"'
+              value: '"follower {{ _one_vip_arguments }}"'
       notify:
         - Restart OpenNebula
 
@@ -237,7 +258,7 @@
         actions:
           - put:
               path: [NETWORK, MONITOR_ADDRESS]
-              value: '"{{ one_vip }}"'
+              value: '"{{ _one_primary_vip }}"'
       notify:
         - Restart OpenNebula
 
